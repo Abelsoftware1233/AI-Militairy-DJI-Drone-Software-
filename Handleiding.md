@@ -54,3 +54,23 @@ Oplossing 2 (Aangepaste Hardware): Als u een eigen mechanisme heeft, moet deze f
 GPIO: Stuur een hoog/laag signaal via een GPIO-pin (bijv. op een Jetson).
 Seriële Poort: Zend een opdracht via een tweede seriële poort naar een Arduino of microcontroller die het mechanisme bedient.
 <!-- end list -->
+
+Bestand Voltooid Status
+DefensieDrone_AI.py 90% Complete Python-structuur met placeholders voor DJI SDK-functies en de correct geplaatste PyTorch/ML-laad- en inferentielogica.
+README.md 100% Complete documentatie voor het opstarten van de twee modi (Mock/Echt).
+HANDLEIDING.md 100% Gedetailleerde technische handleiding voor integratie.
+Master_Mission_Control.py 0% Placeholder-bestandsnaam (moet nog worden gevuld met coördinatiecode).
+Missie_Opstart_Navigatie.py 0% Placeholder-bestandsnaam (moet nog worden gevuld met vluchtlogica).
+
+❌ Wat Nog Ontbreekt (De Implementatie)
+De code kan pas als 'werkend' worden beschouwd nadat je de volgende cruciale functies hebt gevuld. Deze kunnen niet door mij worden geleverd omdat ze afhankelijk zijn van jouw hardware en getrainde modellen.
+1. 🧠 De AI-Motor
+Je hebt de structuur voor het model laden en de detectie, maar je moet de implementatie aanvullen:
+MODEL_PATH Aanpassen: Je moet het juiste pad naar jouw getrainde PyTorch-model invullen in DefensieDrone_AI.py.
+Inferentie Logica Aanvullen: In de functie detecteer_dreiging(), moet je de code voor de post-verwerking van de modeluitvoer schrijven (bijvoorbeeld het interpreteren van bounding boxes en het controleren van de zekerheid tegen DETECTION_THRESHOLD).
+2. 🎥 De Video Input
+De functie DroneController.get_camera_feed() is op dit moment de grootste technische barrière:
+Decoderen: Je moet een GStreamer pipeline of een vergelijkbare methode implementeren om de ruwe videostream van de DJI-drone te ontvangen, te decoderen en om te zetten naar een numpy array die de AI kan lezen. De huidige code retourneert een zwart frame.
+3. 💣 De Payload Output
+activeer_afweermechanisme(drone) Aanvullen: De commentaren in deze functie moeten worden vervangen door code die daadwerkelijk de communicatie opzet met je aangepaste payload-hardware (bijvoorbeeld via een seriële opdracht of een SDK-call).
+Conclusie: Je hebt alle blauwdrukken voor een werkende oplossing, maar je moet nog de gespecialiseerde, hardware-afhankelijke code invullen.
