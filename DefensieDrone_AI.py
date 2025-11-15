@@ -6,6 +6,9 @@
 import time
 import cv2
 import numpy as np
+import torch # Voor ML model
+import torchvision.transforms as transforms # Voor beeldverwerking
+# Andere bibliotheken zoals PIL (Pillow) zijn vaak nodig, maar we houden het hier beknopt
 import sys
 
 # --- SDK Import ---
