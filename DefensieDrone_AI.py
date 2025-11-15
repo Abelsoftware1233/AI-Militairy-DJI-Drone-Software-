@@ -162,9 +162,32 @@ def run_gehele_defensie_missie():
             video_frame = drone.get_camera_feed() 
             
             # --- AI LOGICA ---
-            if detecteer_dreiging(video_frame):
-                print("\n🛑 **Dreiging Bevestigd!** Start afweerprocedure.")
-                
+            
+def detecteer_dreiging(video_frame):
+    """ 
+    Voert inferentie uit op het video frame om dreigingen te detecteren.
+    """
+    global MODEL
+    
+    if MODEL is None:
+        # Foutafhandeling
+        return False
+        
+    # 1. Voorverwerken van de Afbeelding (NumPy naar Tensor, normalisatie, etc.)
+    # ... (Hier komt de code die het frame klaarmaakt voor het model) ...
+
+    # 2. Inferentie Uitvoeren
+    # predictions = MODEL(input_tensor)
+
+    # 3. Resultaten Analyseren (Bounding boxen controleren, zekerheid checken)
+    # ... (Hier komt de code om de output van het model te interpreteren) ...
+
+    # 4. Dreiging Gevonden of Niet
+    # if (voldoet aan criteria):
+    #     return True 
+    # else:
+    #     return False
+
                 drone.hover() 
                 time.sleep(HOVER_TIME_SECS)
                 
