@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 import torch # Voor ML model
 import torchvision.transforms as transforms # Voor beeldverwerking
-# Andere bibliotheken zoals PIL (Pillow) zijn vaak nodig, maar we houden het hier beknopt
 import sys
 
 # --- SDK Import ---
@@ -31,7 +30,6 @@ DJI_APP_ID = 1234567
 DJI_ENC_KEY = b"UW_ENCRYPTIE_SLEUTEL_HIER" 
 SERIAL_PORT = "/dev/ttyUSB0"   
 BAUD_RATE = 921600
-
 
 # =================================================================
 # 1. DRONE CONTROLLER KLASSE (Echte DJI SDK)
@@ -66,7 +64,6 @@ class DroneController:
 
     def takeoff(self):
         print("🚁 DJI SDK: Opstijgcommando verzonden.")
-        # Dit is een blokkerende aanroep tot de drone stabiel in de lucht is
         self.drone.control.takeoff(timeout=10)
 
     def land(self):
@@ -75,17 +72,10 @@ class DroneController:
     
     def hover(self):
         print("⏸️ DJI SDK: Zend nul-bewegingscommando om stil te hangen.")
-        # Zend een nul-snelheidscommando om direct stil te hangen in de huidige positie
         self.drone.control.send_position_and_attitude_control(0, 0, 0, 0)
         
     def get_camera_feed(self):
-        # WAARSCHUWING: Deze functie moet worden vervangen door een complexere 
-        # implementatie die de videostream van de drone verwerkt (bijv. GStreamer).
-        # Voor structurele volledigheid blijft het hier een 'placeholder' die een frame retourneert.
-        # U MOET DEZE FUNCTIE AANPASSEN!
-        
-        # Simuleer een leeg frame om de rest van de code te laten werken zonder video-invoer
-        # Als u ECHT een frame hebt, decodeer het dan en retourneer het.
+        # U MOET DEZE FUNCTIE AANPASSEN! (GStreamer/Video Decoding)
         print("WAARSCHUWING: Video Feed is momenteel een zwart frame. AI-detectie zal mislukken.")
         return np.zeros((480, 640, 3), dtype=np.uint8)
 
@@ -94,14 +84,36 @@ class DroneController:
 # 2. CORE FUNCTIES
 # =================================================================
 
+# --- ML Configuratie ---
+MODEL = None
+MODEL_PATH = '/pad/naar/uw/getraind/model.pth' # PAS DIT PAD AAN!
+TARGET_CLASSES = ['vijandelijk object', 'onbekende drone', 'missiel']
+MIN_CONFIDENCE = DETECTION_THRESHOLD
+
+def load_ml_model():
+    """
+    Laadt het getrainde Machine Learning model eenmalig in het geheugen.
+    """
+    global MODEL
+    print(f"🧠 Laden van ML Model vanaf: {MODEL_PATH}...")
+    try:
+        # Dit is een PyTorch voorbeeld. Vervang dit door uw specifieke laadcode.
+        MODEL = torch.load(MODEL_PATH)
+        MODEL.eval() # Zet het model in evaluatie modus
+        print("✅ ML Model succesvol geladen.")
+    except Exception as e:
+        print(f"❌ FOUT bij laden van ML Model: {e}")
+        # Stop het programma als het model niet geladen kan worden
+        sys.exit(1)
+
+
 def activeer_afweermechanisme(drone):
     """ Activeert de aangepaste payload. """
     print(f"🚨🚨 COMMANDO: Activeer Payload via ID {PAYLOAD_ACTIVATION_ID}...")
     
     try:
-        # Dit commando moet exact overeenkomen met uw payload-interface in de SDK
-        # Voorbeeld: drone.payload.activate(PAYLOAD_ACTIVATION_ID) 
-        time.sleep(0.5) # Simuleer vertraging
+        # ECHTE CODE HIER: drone.payload.activate(PAYLOAD_ACTIVATION_ID) 
+        time.sleep(0.5) 
         print("✅ Payload succesvol geactiveerd (Object afgeworpen).")
         return True
     except Exception as e:
@@ -110,22 +122,57 @@ def activeer_afweermechanisme(drone):
 
 def detecteer_dreiging(video_frame):
     """ 
-    AI Detectie Functie: Plaats hier de code voor het laden en uitvoeren van uw ML-model.
+    Voert inferentie uit op het video frame om dreigingen te detecteren.
     """
+    global MODEL
     
+    if MODEL is None:
+        # Als de load_ml_model() mislukt, retourneert dit False
+        print("Fout: ML Model niet geladen tijdens detectie.")
+        return False
+        
     # --- ECHTE AI IMPLEMENTATIE CODE HIER ---
-    # Voorbeeld: resultaten = model.predict(video_frame)
-    #
-    # Als er detecties zijn van het 'dreiging' type met hoge zekerheid:
-    # if any(r.confidence > DETECTION_THRESHOLD for r in resultaten):
-    #     return True
-    # ---------------------------------------
+    
+    # 1. Voorverwerking (NumPy naar PyTorch Tensor)
+    transform = transforms.Compose([
+        transforms.ToTensor(), 
+        # Voeg hier de normalisatie/resizing toe die uw model vereist
+    ])
+    try:
+        input_tensor = transform(video_frame).unsqueeze(0) 
+    except Exception:
+        # Kan gebeuren als video_frame een onjuist formaat heeft (bijv. zwart frame)
+        return False 
 
-    # OpenCV Visuele Feedback (vereist een werkende video_frame!)
+    # 2. Inferentie Uitvoeren
+    with torch.no_grad():
+        predictions = MODEL(input_tensor)
+        
+    # 3. Resultaten Analyseren (Bounding boxes, zekerheid)
+    # Dit is een placeholder voor de interpretatie van uw specifieke model-output
+    # if (analyse van 'predictions' toont een dreiging):
+    #     confidence_found = True # Vervang dit met de echte zekerheid
+    # else:
+    #     confidence_found = False
+
+    # --- SIMULATIE VAN RESULTAAT (VERWIJDER DIT EENMAAL ECHTE INFERENTIE WERKT) ---
+    # Omdat het model nu een fout zal geven zonder echt pad, simuleren we het resultaat tijdelijk.
+    confidence_found = False
+    if np.mean(video_frame) < 10: # Als het zwart frame is (standaard in get_camera_feed)
+        confidence_found = False
+    
+    # --- EINDE SIMULATIE ---
+    
+    # 4. Dreiging Bevestigen
+    if confidence_found: # Gebruik hier de echte zekerheid van het model
+        # Visualisatie van de detectie kan hier nog
+        cv2.imshow("Drone Camera Feed", video_frame)
+        cv2.waitKey(1)
+        return True
+    
+    # OpenCV Visuele Feedback (voor non-detectie)
     cv2.imshow("Drone Camera Feed", video_frame)
     cv2.waitKey(1) 
-
-    # Huidige return waarde is altijd False zolang de video_frame functie niet werkt
     return False
 
 # =================================================================
@@ -139,7 +186,7 @@ def run_gehele_defensie_missie():
     print("=== 🚀 START DEFENSIE DRONE MISSIE (PURE SDK MODUS) ===")
     
     try:
-        # Initialiseer de ECHTE controller met de ingevulde credentials
+        # Initialiseer de ECHTE controller
         drone = DroneController(DJI_APP_ID, DJI_ENC_KEY, SERIAL_PORT, BAUD_RATE)
             
     except Exception as e:
@@ -147,6 +194,9 @@ def run_gehele_defensie_missie():
         return
 
     try:
+        # --- EERSTE STAP: LAAD ML MODEL EENMALIG ---
+        load_ml_model()
+        
         # STAP 1: INITIALISATIE EN OPSTIJGEN
         if not drone.connect():
             return
@@ -162,36 +212,14 @@ def run_gehele_defensie_missie():
             video_frame = drone.get_camera_feed() 
             
             # --- AI LOGICA ---
-            
-def detecteer_dreiging(video_frame):
-    """ 
-    Voert inferentie uit op het video frame om dreigingen te detecteren.
-    """
-    global MODEL
-    
-    if MODEL is None:
-        # Foutafhandeling
-        return False
-        
-    # 1. Voorverwerken van de Afbeelding (NumPy naar Tensor, normalisatie, etc.)
-    # ... (Hier komt de code die het frame klaarmaakt voor het model) ...
-
-    # 2. Inferentie Uitvoeren
-    # predictions = MODEL(input_tensor)
-
-    # 3. Resultaten Analyseren (Bounding boxen controleren, zekerheid checken)
-    # ... (Hier komt de code om de output van het model te interpreteren) ...
-
-    # 4. Dreiging Gevonden of Niet
-    # if (voldoet aan criteria):
-    #     return True 
-    # else:
-    #     return False
-
+            if detecteer_dreiging(video_frame):
+                # Deze code wordt uitgevoerd zodra detecteer_dreiging True retourneert
+                print("\n🛑 **Dreiging Bevestigd!** Start afweerprocedure.")
+                
                 drone.hover() 
                 time.sleep(HOVER_TIME_SECS)
                 
-                if activeer_afweermechanisme(drone): # Geef drone-object mee voor echte payload-aanroep
+                if activeer_afweermechanisme(drone): 
                     print("🚀 Afweer succesvol. De missie stopt na actie.")
                     missie_actief = False 
                 
