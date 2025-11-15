@@ -1,101 +1,81 @@
 # Bestandsnaam: DefensieDrone_AI.py
 
-# Dit zijn placeholder-bibliotheken voor demonstratiedoeleinden
 import dji_sdk_lib as dji
 import time
 import cv2
 import numpy as np
 
-# Aanname: de drone is uitgerust met een payload die geactiveerd kan worden.
-PAYLOAD_ACTIVATION_PIN = 1 # Voorbeeld van een GPIO-pin of een commando-ID
-DETECTION_THRESHOLD = 0.8 # Minimum zekerheid voor objectdetectie
+# --- Configuratie ---
+PAYLOAD_ACTIVATION_ID = 1      # Commando ID voor hardware
+DETECTION_THRESHOLD = 0.8      # Zekerheid nodig voor 'dreiging'
+HOVER_TIME_SECS = 3.0          # Hoe lang de drone stil hangt tijdens afweer
 
-# --- 1. Payload Functie ---
+# --- Payload Functie ---
 def activeer_afweermechanisme():
-    """
-    Simuleert de activering van de aangepaste payload.
-    In een echt scenario: stuur commando naar de Onboard Computer of GPIO-pin.
-    """
-    print(f"🚨🚨 COMMANDO: Activeer Payload via Pin/ID {PAYLOAD_ACTIVATION_PIN}...")
+    """ Simuleert de activering van de aangepaste payload. """
+    print(f"🚨🚨 COMMANDO: Activeer Payload via ID {PAYLOAD_ACTIVATION_ID}...")
     
     try:
-        # Dit is puur conceptueel:
-        # dji.payload.activate(PAYLOAD_ACTIVATION_PIN) 
-        time.sleep(0.5) # Vertraging voor het simuleren van de actie
+        # dji.payload.activate(PAYLOAD_ACTIVATION_ID) # Echte SDK-commando
+        time.sleep(0.5) 
         print("✅ Payload succesvol geactiveerd (Object afgeworpen).")
         return True
     except Exception as e:
         print(f"❌ Fout bij activeren payload: {e}")
         return False
 
-# --- 2. AI Detectie Functie ---
+# --- AI Detectie Functie ---
 def detecteer_dreiging(video_frame):
+    """ 
+    Simuleert een AI-model voor het detecteren van een 'dreiging' in het videobeeld. 
+    In de praktijk gebruikt dit een geladen .h5 of .pt model.
     """
-    Simuleert een AI-model voor het detecteren van een 'dreiging' in het videobeeld.
-    """
+    # Plaats hier de code voor het laden en uitvoeren van je AI-model.
     
-    # --- SIMULATIE ---
+    # --- SIMULATIE van AI-zekerheid ---
     gemiddelde_pixel_waarde = np.mean(video_frame)
     zekerheid = (gemiddelde_pixel_waarde / 255.0) 
 
     if zekerheid > DETECTION_THRESHOLD:
-        print(f"🔍 Dreiging gedetecteerd! Zekerheid: {zekerheid:.2f}. Klaar om af te werpen.")
+        print(f"🔍 Dreiging gedetecteerd! Zekerheid: {zekerheid:.2f}.")
         return True
     
     return False
 
-# --- 3. Hoofd Drone Besturingslus ---
-def run_drone_defensie_mission():
+# --- Hoofd Defensie Lus ---
+def run_defensie_lus(drone):
     """
-    Initialiseert de drone en voert de AI-gestuurde missie uit.
+    De continue lus die de AI-logica uitvoert.
     """
-    print("🚁 Initialiseren van DJI Drone en SDK...")
-    
-    try:
-        # 1. Initialiseer de SDK en krijg controle
-        drone = dji.DroneController()
-        drone.connect()
-        # drone.takeoff() 
-
-    except Exception as e:
-        print(f"❌ Fout bij initialisatie: {e}")
-        return
-
     missie_actief = True
     while missie_actief:
         try:
-            # 2. Lees Telemetrie & Video Feed
+            # Lees Telemetrie & Video Feed
             status = drone.get_flight_status()
             
-            # Simulatie van een frame (moet vervangen worden door echte camera feed)
+            # **BELANGRIJK**: Vervang dit door de echte DJI Camera Stream!
             video_frame = np.random.randint(0, 256, size=(480, 640, 3), dtype=np.uint8) 
             
-            # --- AI LOGICA ---
             if detecteer_dreiging(video_frame):
                 print("\n🛑 **Dreiging Bevestigd!** Start afweerprocedure.")
                 
-                # 3. Pauzeer Navigatie (optioneel)
+                # 1. Pauzeer Navigatie en hang stil
+                print(f"⏸️ Drone gaat {HOVER_TIME_SECS} seconden stilhangen...")
                 # drone.hover() 
+                time.sleep(HOVER_TIME_SECS)
                 
-                # 4. Activeer het Afweermechanisme
+                # 2. Activeer het Afweermechanisme
                 if activeer_afweermechanisme():
-                    missie_actief = False 
+                    print("🚀 Afweer succesvol. AI-lus stopt nu.")
+                    return True # Geef terug dat de actie is uitgevoerd
                 
-            time.sleep(0.1) 
+            time.sleep(0.1) # Korte wachttijd voor de volgende frame
 
-        except KeyboardInterrupt:
-            print("\nMissie afgebroken door gebruiker.")
-            missie_actief = False
         except Exception as e:
-            print(f"❌ Onverwachte fout tijdens missie: {e}")
-            missie_actief = False
+            print(f"❌ Fout in de defensielus: {e}")
+            return False # Geef terug dat er een fout was
 
-    # 5. Landen en uitschakelen (Na de lus)
-    print("⬇️ Missie voltooid. Landen en uitschakelen...")
-    # drone.land()
-    # drone.disconnect()
-    print("Drone veilig uitgeschakeld.")
-
-# Start het script
+# Deze functie zou aangeroepen worden door een master script na opstijgen.
 # if __name__ == "__main__":
-#     run_drone_defensie_mission()
+#    # run_defensie_lus(dji.DroneController())
+#    pass
