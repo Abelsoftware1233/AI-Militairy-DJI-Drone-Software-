@@ -49,7 +49,6 @@ class DroneController:
         self.connected = False
         
     def connect(self):
-        # Probeer de verbinding te activeren
         if self.drone.activate():
             print("🚁 DJI SDK: Verbinding en activering voltooid.")
             self.connected = True
@@ -59,7 +58,6 @@ class DroneController:
             return False
 
     def get_flight_status(self):
-        # Haal de echte vluchtstatus op
         return self.drone.get_flight_status()
 
     def takeoff(self):
@@ -75,8 +73,10 @@ class DroneController:
         self.drone.control.send_position_and_attitude_control(0, 0, 0, 0)
         
     def get_camera_feed(self):
-        # U MOET DEZE FUNCTIE AANPASSEN! (GStreamer/Video Decoding)
-        print("WAARSCHUWING: Video Feed is momenteel een zwart frame. AI-detectie zal mislukken.")
+        # WAARSCHUWING: Implementeer hier de GStreamer/Video Decoding Pipeline.
+        # De code moet de videostream ontvangen, decoderen en converteren naar een numpy-array.
+        
+        print("WAARSCHUWING: Video Feed is momenteel een zwart frame.")
         return np.zeros((480, 640, 3), dtype=np.uint8)
 
 
@@ -86,7 +86,7 @@ class DroneController:
 
 # --- ML Configuratie ---
 MODEL = None
-MODEL_PATH = '/pad/naar/uw/getraind/model.pth' # PAS DIT PAD AAN!
+MODEL_PATH = '/pad/naar/uw/getraind/model.pth' # **PAS DIT PAD AAN!**
 TARGET_CLASSES = ['vijandelijk object', 'onbekende drone', 'missiel']
 MIN_CONFIDENCE = DETECTION_THRESHOLD
 
@@ -97,13 +97,11 @@ def load_ml_model():
     global MODEL
     print(f"🧠 Laden van ML Model vanaf: {MODEL_PATH}...")
     try:
-        # Dit is een PyTorch voorbeeld. Vervang dit door uw specifieke laadcode.
         MODEL = torch.load(MODEL_PATH)
-        MODEL.eval() # Zet het model in evaluatie modus
+        MODEL.eval() 
         print("✅ ML Model succesvol geladen.")
     except Exception as e:
         print(f"❌ FOUT bij laden van ML Model: {e}")
-        # Stop het programma als het model niet geladen kan worden
         sys.exit(1)
 
 
@@ -127,13 +125,9 @@ def detecteer_dreiging(video_frame):
     global MODEL
     
     if MODEL is None:
-        # Als de load_ml_model() mislukt, retourneert dit False
-        print("Fout: ML Model niet geladen tijdens detectie.")
         return False
         
-    # --- ECHTE AI IMPLEMENTATIE CODE HIER ---
-    
-    # 1. Voorverwerking (NumPy naar PyTorch Tensor)
+    # 1. Voorverwerking
     transform = transforms.Compose([
         transforms.ToTensor(), 
         # Voeg hier de normalisatie/resizing toe die uw model vereist
@@ -141,31 +135,27 @@ def detecteer_dreiging(video_frame):
     try:
         input_tensor = transform(video_frame).unsqueeze(0) 
     except Exception:
-        # Kan gebeuren als video_frame een onjuist formaat heeft (bijv. zwart frame)
         return False 
 
     # 2. Inferentie Uitvoeren
     with torch.no_grad():
         predictions = MODEL(input_tensor)
         
-    # 3. Resultaten Analyseren (Bounding boxes, zekerheid)
-    # Dit is een placeholder voor de interpretatie van uw specifieke model-output
-    # if (analyse van 'predictions' toont een dreiging):
-    #     confidence_found = True # Vervang dit met de echte zekerheid
-    # else:
-    #     confidence_found = False
-
-    # --- SIMULATIE VAN RESULTAAT (VERWIJDER DIT EENMAAL ECHTE INFERENTIE WERKT) ---
-    # Omdat het model nu een fout zal geven zonder echt pad, simuleren we het resultaat tijdelijk.
-    confidence_found = False
-    if np.mean(video_frame) < 10: # Als het zwart frame is (standaard in get_camera_feed)
-        confidence_found = False
+    # 3. Resultaten Analyseren
+    # HIER KOMT UW SPECIFIEKE POSTVERWERKINGSCODE
     
-    # --- EINDE SIMULATIE ---
+    confidence_found = False
+    
+    # VOORBEELD ANALYSE: Loop door de detecties en controleer de zekerheid
+    # for detection in predictions:
+    #     if detection.label in TARGET_CLASSES and detection.confidence > MIN_CONFIDENCE:
+    #         confidence_found = True
+    #         # Optioneel: Visualisatie van Bounding Box op video_frame
+    #         break
     
     # 4. Dreiging Bevestigen
-    if confidence_found: # Gebruik hier de echte zekerheid van het model
-        # Visualisatie van de detectie kan hier nog
+    if confidence_found:
+        print(f"🔍 Dreiging gedetecteerd! Zekerheid boven {MIN_CONFIDENCE}")
         cv2.imshow("Drone Camera Feed", video_frame)
         cv2.waitKey(1)
         return True
@@ -186,7 +176,6 @@ def run_gehele_defensie_missie():
     print("=== 🚀 START DEFENSIE DRONE MISSIE (PURE SDK MODUS) ===")
     
     try:
-        # Initialiseer de ECHTE controller
         drone = DroneController(DJI_APP_ID, DJI_ENC_KEY, SERIAL_PORT, BAUD_RATE)
             
     except Exception as e:
@@ -202,7 +191,7 @@ def run_gehele_defensie_missie():
             return
             
         drone.takeoff()
-        time.sleep(5) # Wacht op stabilisatie
+        time.sleep(5) 
         
         # STAP 2: DEFENSIE LUS
         print("\n▶️ Start continue AI Defensie Monitoring Lus. Druk CTRL+C om te stoppen.")
@@ -213,7 +202,6 @@ def run_gehele_defensie_missie():
             
             # --- AI LOGICA ---
             if detecteer_dreiging(video_frame):
-                # Deze code wordt uitgevoerd zodra detecteer_dreiging True retourneert
                 print("\n🛑 **Dreiging Bevestigd!** Start afweerprocedure.")
                 
                 drone.hover() 
